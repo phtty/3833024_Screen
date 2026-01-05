@@ -1,0 +1,334 @@
+#include "display.h"
+#include "hub75.h"
+
+__attribute__((section(".ccmram"))) uint8_t pixel_map[DISRAM_SIZE]  = {0};
+__attribute__((section(".ccmram"))) uint8_t hub75_buff[DISRAM_SIZE] = {0};
+
+static void scan_channel(uint8_t line_cnt);
+
+const ChannelStruct_TypeDef channel_red[10] = {
+    {R2_GPIO_Port, R2_Pin},
+    {R1_GPIO_Port, R1_Pin},
+    {R4_GPIO_Port, R4_Pin},
+    {R3_GPIO_Port, R3_Pin},
+    {R6_GPIO_Port, R6_Pin},
+    {R5_GPIO_Port, R5_Pin},
+    {R8_GPIO_Port, R8_Pin},
+    {R7_GPIO_Port, R7_Pin},
+    {R10_GPIO_Port, R10_Pin},
+    {R9_GPIO_Port, R9_Pin},
+};
+
+const ChannelStruct_TypeDef channel_green[10] = {
+    {G2_GPIO_Port, G2_Pin},
+    {G1_GPIO_Port, G1_Pin},
+    {G4_GPIO_Port, G4_Pin},
+    {G3_GPIO_Port, G3_Pin},
+    {G6_GPIO_Port, G6_Pin},
+    {G5_GPIO_Port, G5_Pin},
+    {G8_GPIO_Port, G8_Pin},
+    {G7_GPIO_Port, G7_Pin},
+    {G10_GPIO_Port, G10_Pin},
+    {G9_GPIO_Port, G9_Pin},
+};
+
+const ChannelStruct_TypeDef channel_blue[10] = {
+    {B2_GPIO_Port, B2_Pin},
+    {B1_GPIO_Port, B1_Pin},
+    {B4_GPIO_Port, B4_Pin},
+    {B3_GPIO_Port, B3_Pin},
+    {B6_GPIO_Port, B6_Pin},
+    {B5_GPIO_Port, B5_Pin},
+    {B8_GPIO_Port, B8_Pin},
+    {B7_GPIO_Port, B7_Pin},
+    {B10_GPIO_Port, B10_Pin},
+    {B9_GPIO_Port, B9_Pin},
+};
+
+__STATIC_INLINE void handle_black(int16_t channel_cnt)
+{
+    channel_red[channel_cnt].port->BSRR   = channel_red[channel_cnt].pin << 0x10;
+    channel_green[channel_cnt].port->BSRR = channel_green[channel_cnt].pin << 0x10;
+    channel_blue[channel_cnt].port->BSRR  = channel_blue[channel_cnt].pin << 0x10;
+}
+
+__STATIC_INLINE void handle_red(int16_t channel_cnt)
+{
+    channel_red[channel_cnt].port->BSRR   = channel_red[channel_cnt].pin;
+    channel_green[channel_cnt].port->BSRR = channel_green[channel_cnt].pin << 0x10;
+    channel_blue[channel_cnt].port->BSRR  = channel_blue[channel_cnt].pin << 0x10;
+}
+
+__STATIC_INLINE void handle_green(int16_t channel_cnt)
+{
+    channel_red[channel_cnt].port->BSRR   = channel_red[channel_cnt].pin << 0x10;
+    channel_green[channel_cnt].port->BSRR = channel_green[channel_cnt].pin;
+    channel_blue[channel_cnt].port->BSRR  = channel_blue[channel_cnt].pin << 0x10;
+}
+
+__STATIC_INLINE void handle_blue(int16_t channel_cnt)
+{
+    channel_red[channel_cnt].port->BSRR   = channel_red[channel_cnt].pin << 0x10;
+    channel_green[channel_cnt].port->BSRR = channel_green[channel_cnt].pin << 0x10;
+    channel_blue[channel_cnt].port->BSRR  = channel_blue[channel_cnt].pin;
+}
+
+__STATIC_INLINE void handle_yellow(int16_t channel_cnt)
+{
+    channel_red[channel_cnt].port->BSRR   = channel_red[channel_cnt].pin;
+    channel_green[channel_cnt].port->BSRR = channel_green[channel_cnt].pin;
+    channel_blue[channel_cnt].port->BSRR  = channel_blue[channel_cnt].pin << 0x10;
+}
+
+__STATIC_INLINE void handle_purple(int16_t channel_cnt)
+{
+    channel_red[channel_cnt].port->BSRR   = channel_red[channel_cnt].pin;
+    channel_green[channel_cnt].port->BSRR = channel_green[channel_cnt].pin << 0x10;
+    channel_blue[channel_cnt].port->BSRR  = channel_blue[channel_cnt].pin;
+}
+
+__STATIC_INLINE void handle_cyan(int16_t channel_cnt)
+{
+    channel_red[channel_cnt].port->BSRR   = channel_red[channel_cnt].pin << 0x10;
+    channel_green[channel_cnt].port->BSRR = channel_green[channel_cnt].pin;
+    channel_blue[channel_cnt].port->BSRR  = channel_blue[channel_cnt].pin;
+}
+
+__STATIC_INLINE void handle_white(int16_t channel_cnt)
+{
+    channel_red[channel_cnt].port->BSRR   = channel_red[channel_cnt].pin;
+    channel_green[channel_cnt].port->BSRR = channel_green[channel_cnt].pin;
+    channel_blue[channel_cnt].port->BSRR  = channel_blue[channel_cnt].pin;
+}
+
+// 跳转表
+ColorHandler color_handlers[] = {
+    handle_black,  // default
+    handle_red,    // case red
+    handle_green,  // case green
+    handle_yellow, // case yellow
+    handle_blue,   // case blue
+    handle_purple, // case purple
+    handle_cyan,   // case cyan
+    handle_white,  // case white
+};
+
+#ifdef SCAN_MODE
+
+void convert_pixelmap(void)
+{
+    uint16_t row_cnt = 0, col_cnt = 0, buff_cnt = 0;
+
+    for (uint16_t src_cnt = 0; src_cnt < DISRAM_SIZE; src_cnt++) {
+        row_cnt = src_cnt / SCREEN_PIXEL_ROW; // 屏幕的行标
+        col_cnt = src_cnt % SCREEN_PIXEL_ROW;
+
+        buff_cnt             = ((col_cnt / 16 + 1) * 8 - 1 - col_cnt % 8) * SCAN_LINE_PIXEL_NUM + row_cnt * 2 + col_cnt / 8 % 2;
+        hub75_buff[buff_cnt] = pixel_map[src_cnt];
+    }
+}
+
+#define LINE_OFFSET    (scan_line * SCAN_LINE_PIXEL_NUM) // 像素点在扫描行的偏移
+#define CHANNEL_OFFSET (channel_cnt * CHANNEL_PIXEL_NUM) // 像素点在通道的偏移
+/**
+ * @brief 动态扫描行切换
+ *
+ * @param line_cnt 行计算
+ */
+static void scan_channel(uint8_t line_cnt)
+{
+    if (line_cnt & 0x01U)
+        HUB75_A = 1;
+    else
+        HUB75_A = 0;
+
+    if (line_cnt & 0x02U)
+        HUB75_B = 1;
+    else
+        HUB75_B = 0;
+
+    if (line_cnt & 0x04U)
+        HUB75_C = 1;
+    else
+        HUB75_C = 0;
+
+    if (line_cnt & 0x08U)
+        HUB75_D = 1;
+    else
+        HUB75_D = 0;
+}
+
+/**
+ * @brief 发送显存数据到HUB75接口
+ *
+ */
+void send_hub75_buff(void)
+{
+    static uint8_t scan_line = 0;
+
+    for (int16_t line_cnt = 0; line_cnt < SCAN_LINE_PIXEL_NUM; line_cnt++) {
+        for (int16_t channel_cnt = 0; channel_cnt < CHANNEL_NUM; channel_cnt++) {
+            // 取出第channel_cnt通道中，第scan_line行的第line_cnt个像素点的颜色数据
+            hub75_color color_index = (hub75_color)hub75_buff[line_cnt + LINE_OFFSET + CHANNEL_OFFSET];
+            // 通过跳转表执行对应颜色通道引脚的电平变化
+            color_handlers[color_index](channel_cnt);
+        }
+
+        // CLK给1个脉冲，LED驱动芯片移位寄存器移位
+        HUB75_CLK = 1;
+        __NOP();
+        __NOP();
+        HUB75_CLK = 0;
+    }
+
+    // 所有通道的第scan_line扫描行数据发送完毕，控制LED驱动芯片将数据放入输出锁存器
+    // 在多行扫描中为原子操作，需将OE保持除能
+    NVIC_DisableIRQ(TIM4_IRQn);
+    HUB75_OE = 1;
+    scan_channel(scan_line); // 扫描行切换
+
+    // LE信号给一个周期，除能闩锁器一个脉冲的时间，使数据从移位寄存器进入输出锁存器
+    HUB75_LAT = 1;
+    __NOP();
+    __NOP();
+    HUB75_LAT = 0;
+    NVIC_EnableIRQ(TIM4_IRQn);
+
+    // 行扫描计数自增
+    scan_line++;
+    if (scan_line >= MOUDLE_SCAN_LINE_NUM)
+        scan_line = 0;
+}
+
+#endif // SCAN_MODE
+
+#ifdef STATIC_MODE
+/**
+ * @brief 更新点阵缓冲区到显存
+ *
+ */
+void convert_pixelmap(void)
+{
+    uint16_t ModuelGroup = 0;
+    uint8_t row_cnt = 0, col_cnt = 0;
+
+    for (uint16_t map_cnt = 0; map_cnt < DISRAM_SIZE; map_cnt++) {
+        row_cnt = map_cnt / SCREEN_PIXEL_ROW; // 屏幕的行??
+        col_cnt = map_cnt % SCREEN_PIXEL_ROW;
+
+        if (row_cnt % 8 / 4) // 计算组标
+            ModuelGroup = col_cnt / 4 + (row_cnt / 8 * 8 / 4 * (MODULE_PER_ROW * 4)) + col_cnt / 16 * 8;
+        else
+            ModuelGroup = col_cnt / 4 + (row_cnt / 8 * 8 / 4 * (MODULE_PER_ROW * 4)) + col_cnt / 16 * 8 + 4;
+
+        switch (row_cnt % 4) {
+            case 0:
+                hub75_buff[col_cnt % 4 + 4 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
+                break;
+
+            case 1:
+                hub75_buff[col_cnt % 4 + 0 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
+                break;
+
+            case 2:
+                hub75_buff[col_cnt % 4 + 12 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
+                break;
+
+            case 3:
+                hub75_buff[col_cnt % 4 + 8 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
+                break;
+
+            default:
+                break;
+        }
+    }
+}
+
+#define CHANNEL_OFFSET (channel_cnt * CHANNEL_PIXEL_NUM)
+/**
+ * @brief 发送显存数据到HUB75接口
+ *
+ */
+void send_hub75_buff(void)
+{
+    for (int16_t line_cnt = 0; line_cnt < SCAN_LINE_PIXEL_NUM; line_cnt++) {
+        for (int16_t channel_cnt = 0; channel_cnt < CHANNEL_NUM; channel_cnt++) {
+            hub75_color color_index = (hub75_color)hub75_buff[line_cnt + CHANNEL_OFFSET];
+
+            color_handlers[color_index](channel_cnt);
+        }
+
+        HUB75_CLK = 1;
+        __NOP();
+        __NOP();
+        HUB75_CLK = 0;
+    }
+
+    NVIC_DisableIRQ(TIM4_IRQn);
+    HUB75_OE = 1;
+
+    // LE信号给一个周期，使数据从移位寄存器进入输出锁存器
+    HUB75_LAT = 1;
+    __NOP();
+    __NOP();
+    HUB75_LAT = 0;
+    NVIC_EnableIRQ(TIM4_IRQn);
+
+    // LED输出信号使能
+    __NOP();
+    __NOP();
+    HUB75_OE = 0;
+}
+#endif // STATIC_MODE
+
+/**
+ * @brief 模组点顺序测试，用于单个模组的像素点规律寻找
+ *
+ * @param color 颜色
+ * @param num_of_point 点数
+ * @param channel 通道数
+ */
+void point_order_test(hub75_color color, int32_t num_of_point, uint8_t channel)
+{
+    color_handlers[color](channel);
+
+    for (int32_t i = 0; i < num_of_point; i++) {
+        HUB75_CLK = 0;
+        __NOP();
+        __NOP();
+        HUB75_CLK = 1;
+        __NOP();
+        __NOP();
+    }
+
+    HAL_NVIC_DisableIRQ(TIM4_IRQn);
+    HUB75_OE = 1;
+
+    HUB75_LAT = 1;
+    __NOP();
+    __NOP();
+    HUB75_LAT = 0;
+    __NOP();
+    __NOP();
+    HUB75_OE = 0;
+    HAL_NVIC_EnableIRQ(TIM4_IRQn);
+}
+
+uint8_t light_level = 1; // 亮度等级
+/**
+ * @brief 软件pwm调光
+ *
+ */
+void pwm_light_handle(void)
+{
+    static uint8_t pwm_cnt = 0; // pwm计数
+
+    if (pwm_cnt < light_level) // light_level的取值范围：0~7??0为关闭显??
+        HUB75_OE = 0;
+    else
+        HUB75_OE = 1;
+
+    pwm_cnt++;
+    if (pwm_cnt >= 8)
+        pwm_cnt = 0;
+}
