@@ -31,7 +31,7 @@ typedef enum {
     purple = 5,
     cyan   = 6,
     white  = 7,
-} hub75_color;
+} DispColor_t;
 
 typedef struct channel_struct {
     GPIO_TypeDef *port;
@@ -47,7 +47,7 @@ extern uint8_t cnt;
 
 void convert_pixelmap(void);
 void send_hub75_buff(void);
-void point_order_test(hub75_color color, int32_t num_of_point, uint8_t channel);
+void point_order_test(DispColor_t color, int32_t num_of_point, uint8_t channel);
 void pwm_light_handle(void);
 
 #endif // !BSP_DISPLAY_DISPLAY_H

@@ -169,7 +169,7 @@ void send_hub75_buff(void)
     for (int16_t line_cnt = 0; line_cnt < SCAN_LINE_PIXEL_NUM; line_cnt++) {
         for (int16_t channel_cnt = 0; channel_cnt < CHANNEL_NUM; channel_cnt++) {
             // 取出第channel_cnt通道中，第scan_line行的第line_cnt个像素点的颜色数据
-            hub75_color color_index = (hub75_color)hub75_buff[line_cnt + LINE_OFFSET + CHANNEL_OFFSET];
+            DispColor_t color_index = (DispColor_t)hub75_buff[line_cnt + LINE_OFFSET + CHANNEL_OFFSET];
             // 通过跳转表执行对应颜色通道引脚的电平变化
             color_handlers[color_index](channel_cnt);
         }
@@ -253,7 +253,7 @@ void send_hub75_buff(void)
 {
     for (int16_t line_cnt = 0; line_cnt < SCAN_LINE_PIXEL_NUM; line_cnt++) {
         for (int16_t channel_cnt = 0; channel_cnt < CHANNEL_NUM; channel_cnt++) {
-            hub75_color color_index = (hub75_color)hub75_buff[line_cnt + CHANNEL_OFFSET];
+            DispColor_t color_index = (DispColor_t)hub75_buff[line_cnt + CHANNEL_OFFSET];
 
             color_handlers[color_index](channel_cnt);
         }
@@ -288,7 +288,7 @@ void send_hub75_buff(void)
  * @param num_of_point 点数
  * @param channel 通道数
  */
-void point_order_test(hub75_color color, int32_t num_of_point, uint8_t channel)
+void point_order_test(DispColor_t color, int32_t num_of_point, uint8_t channel)
 {
     color_handlers[color](channel);
 

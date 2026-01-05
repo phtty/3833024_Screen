@@ -29,7 +29,7 @@
 #include "spi.h"
 #include "w25qxx.h"
 #include "hub75.h"
-#include "display.h"
+#include "render.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,6 +62,13 @@ const osThreadAttr_t PointTestTask_attributes = {
     .stack_size = 1024 * 4,
     .priority   = (osPriority_t)osPriorityAboveNormal,
 };
+
+osThreadId_t RefreshTaskHandle;
+const osThreadAttr_t RefreshTask_attributes = {
+    .name       = "RefreshTask",
+    .stack_size = 512 * 4,
+    .priority   = (osPriority_t)osPriorityAboveNormal,
+};
 /* USER CODE END Variables */
 /* Definitions for initTask */
 osThreadId_t initTaskHandle;
@@ -75,6 +82,7 @@ const osThreadAttr_t initTask_attributes = {
 /* USER CODE BEGIN FunctionPrototypes */
 void HalfSecTask(void *argument);
 void PointTestTask(void *argument);
+void RefreshTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
 void InitailizeTask(void *argument);
@@ -140,10 +148,13 @@ void InitailizeTask(void *argument)
     HAL_TIM_Base_Start_IT(&htim3);
     HAL_TIM_Base_Start_IT(&htim4);
 
-    HalfSecTaskHandle   = osThreadNew(HalfSecTask, NULL, &HalfSecTask_attributes);
-    PointTestTaskHandle = osThreadNew(PointTestTask, NULL, &PointTestTask_attributes);
+    HalfSecTaskHandle = osThreadNew(HalfSecTask, NULL, &HalfSecTask_attributes);
+    // PointTestTaskHandle = osThreadNew(PointTestTask, NULL, &PointTestTask_attributes);
+    RefreshTaskHandle = osThreadNew(RefreshTask, NULL, &RefreshTask_attributes);
 
     BSP_W25Qx_Init(&hw25q64, &hspi1);
+
+    RenderString(0, 0, (uint8_t *)"ab²âc»»ÐÐ", strlen("ab²âc»»ÐÐ"), green, font_24, font_ht);
 
     osThreadExit();
     /* Infinite loop */
@@ -163,19 +174,32 @@ void HalfSecTask(void *argument)
     }
 }
 
+void RefreshTask(void *argument)
+{
+    uint32_t refresh_flag = 0;
+
+    for (;;) {
+        refresh_flag = osThreadFlagsWait(0x01, osFlagsWaitAny, osWaitForever);
+        if (refresh_flag)
+            convert_pixelmap();
+    }
+}
+
 void PointTestTask(void *argument)
 {
     // HAL_TIM_Base_Stop_IT(&htim3);
 
     for (;;) {
-        for (int i = 0; i < DISRAM_SIZE; i++) {
-            pixel_map[i] = green;
+        // for (int i = 0; i < DISRAM_SIZE; i++) {
+        //     pixel_map[i] = green;
 
-            convert_pixelmap();
-            osDelay(50);
+        //     convert_pixelmap();
+        //     osDelay(50);
 
-            pixel_map[i] = black;
-        }
+        //     pixel_map[i] = black;
+        // }
+
+        // point_order_test(green, 1, 0);
         osDelay(500);
     }
 }
