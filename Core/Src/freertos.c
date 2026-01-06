@@ -188,20 +188,22 @@ void RefreshTask(void *argument)
 void PointTestTask(void *argument)
 {
     // HAL_TIM_Base_Stop_IT(&htim3);
+    point_order_test(black, CHANNEL_PIXEL_NUM / 2, 0);
 
     for (;;) {
-        for (int i = 0; i < DISRAM_SIZE / 2; i++) {
-            // pixel_map[i] = green;
-            hub75_buff[i] = green;
+        for (int i = 0; i < DISRAM_SIZE; i++) {
+            pixel_map[i] = green;
+            // hub75_buff[i] = green;
 
-            // convert_pixelmap();
+            convert_pixelmap();
             osDelay(500);
 
-            // pixel_map[i] = black;
-            hub75_buff[i] = black;
+            pixel_map[i] = black;
+            // hub75_buff[i] = black;
         }
 
         // point_order_test(green, 1, 0);
+        // point_order_test(black, CHANNEL_PIXEL_NUM - 1, 0);
 
         osDelay(500);
     }

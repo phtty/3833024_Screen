@@ -80,7 +80,7 @@ void MX_TIM4_Init(void)
     htim4.Instance               = TIM4;
     htim4.Init.Prescaler         = 84 - 1;
     htim4.Init.CounterMode       = TIM_COUNTERMODE_UP;
-    htim4.Init.Period            = 10 - 1;
+    htim4.Init.Period            = 20 - 1;
     htim4.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
     htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
     if (HAL_TIM_Base_Init(&htim4) != HAL_OK) {
@@ -111,7 +111,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle)
         __HAL_RCC_TIM3_CLK_ENABLE();
 
         /* TIM3 interrupt Init */
-        HAL_NVIC_SetPriority(TIM3_IRQn, 7, 0);
+        HAL_NVIC_SetPriority(TIM3_IRQn, 6, 0);
         HAL_NVIC_EnableIRQ(TIM3_IRQn);
         /* USER CODE BEGIN TIM3_MspInit 1 */
 
@@ -124,7 +124,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle)
         __HAL_RCC_TIM4_CLK_ENABLE();
 
         /* TIM4 interrupt Init */
-        HAL_NVIC_SetPriority(TIM4_IRQn, 6, 0);
+        HAL_NVIC_SetPriority(TIM4_IRQn, 5, 0);
         HAL_NVIC_EnableIRQ(TIM4_IRQn);
         /* USER CODE BEGIN TIM4_MspInit 1 */
 

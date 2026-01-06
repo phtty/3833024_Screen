@@ -4,8 +4,6 @@
 __attribute__((section(".ccmram"))) uint8_t pixel_map[DISRAM_SIZE]  = {0};
 __attribute__((section(".ccmram"))) uint8_t hub75_buff[DISRAM_SIZE] = {0};
 
-static void scan_channel(uint8_t line_cnt);
-
 const ChannelStruct_TypeDef channel_red[] = {
     {R1_GPIO_Port, R1_Pin},
     {R2_GPIO_Port, R2_Pin},
@@ -114,6 +112,8 @@ ColorHandler color_handlers[] = {
 };
 
 #ifdef SCAN_MODE
+
+static void scan_channel(uint8_t line_cnt);
 
 void convert_pixelmap(void)
 {
@@ -234,40 +234,20 @@ void convert_pixelmap(void)
 {
     uint16_t ModuelGroup = 0;
     uint8_t row_cnt = 0, col_cnt = 0;
+    static uint8_t group_offset[] = {5, 4, 1, 0};
 
     for (uint16_t map_cnt = 0; map_cnt < DISRAM_SIZE; map_cnt++) {
-        row_cnt = map_cnt / SCREEN_PIXEL_ROW; // 屏幕的行??
+        row_cnt = map_cnt / SCREEN_PIXEL_ROW; // 屏幕的行标
         col_cnt = map_cnt % SCREEN_PIXEL_ROW;
 
-        if (row_cnt % 8 / 4) // 计算组标
-            ModuelGroup = col_cnt / 4 + (row_cnt / 8 * 8 / 4 * (MODULE_PER_ROW * 4)) + col_cnt / 16 * 8;
-        else
-            ModuelGroup = col_cnt / 4 + (row_cnt / 8 * 8 / 4 * (MODULE_PER_ROW * 4)) + col_cnt / 16 * 8 + 4;
+        // 计算组标
+        ModuelGroup = group_offset[row_cnt % 4] + row_cnt / 4 * CHANNEL_PIXEL_NUM / 8 + col_cnt / 16 * 8 + col_cnt / 8 % 2 * 2;
 
-        switch (row_cnt % 4) {
-            case 0:
-                hub75_buff[col_cnt % 4 + 4 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
-                break;
-
-            case 1:
-                hub75_buff[col_cnt % 4 + 0 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
-                break;
-
-            case 2:
-                hub75_buff[col_cnt % 4 + 12 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
-                break;
-
-            case 3:
-                hub75_buff[col_cnt % 4 + 8 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
-                break;
-
-            default:
-                break;
-        }
+        hub75_buff[col_cnt % 8 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
     }
 }
 
-#define CHANNEL_OFFSET (channel_cnt * CHANNEL_PIXEL_NUM)
+#define CHANNEL_OFFSET (channel_cnt * CHANNEL_PIXEL_NUM) // 像素点在通道的偏移
 /**
  * @brief 发送显存数据到HUB75接口
  *
@@ -276,31 +256,30 @@ void send_hub75_buff(void)
 {
     for (int16_t line_cnt = 0; line_cnt < SCAN_LINE_PIXEL_NUM; line_cnt++) {
         for (int16_t channel_cnt = 0; channel_cnt < CHANNEL_NUM; channel_cnt++) {
+            // 取出第channel_cnt通道中，第scan_line行的第line_cnt个像素点的颜色数据
             DispColor_t color_index = (DispColor_t)hub75_buff[line_cnt + CHANNEL_OFFSET];
-
+            // 通过跳转表执行对应颜色通道引脚的电平变化
             color_handlers[color_index](channel_cnt);
         }
 
+        // CLK给1个脉冲，LED驱动芯片移位寄存器移位
         HUB75_CLK = 1;
         __NOP();
         __NOP();
         HUB75_CLK = 0;
     }
 
+    // 所有通道的第scan_line扫描行数据发送完毕，控制LED驱动芯片将数据放入输出锁存器
+    // 在多行扫描中为原子操作，需将OE保持除能
     NVIC_DisableIRQ(TIM4_IRQn);
     HUB75_OE = 1;
 
-    // LE信号给一个周期，使数据从移位寄存器进入输出锁存器
+    // LE信号给一个周期，除能闩锁器一个脉冲的时间，使数据从移位寄存器进入输出锁存器
     HUB75_LAT = 1;
     __NOP();
     __NOP();
     HUB75_LAT = 0;
     NVIC_EnableIRQ(TIM4_IRQn);
-
-    // LED输出信号使能
-    __NOP();
-    __NOP();
-    HUB75_OE = 0;
 }
 #endif // STATIC_MODE
 
