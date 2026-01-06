@@ -8,15 +8,15 @@
 #define MODULE_PIXEL_ROW     32 // 模组每行的像素个数
 #define MODULE_PIXEL_COL     32 // 模组每列的像素个数
 #define MOUDLE_CHANNEL_NUM   2  // 单块模组的通道个数
-#define MOUDLE_SCAN_LINE_NUM 4  // 模组的扫描行数
+#define MOUDLE_SCAN_LINE_NUM 8  // 模组的扫描行数
 // #define GROUP_SIZE           16 // 每组的像素个数
 
-#define SCREEN_PIXEL_ROW    (MODULE_PER_ROW * MODULE_PIXEL_ROW) // 屏幕的每行像素数
-#define SCREEN_PIXEL_COL    (MODULE_PER_COL * MODULE_PIXEL_COL) // 屏幕的每列像素数
+#define SCREEN_PIXEL_ROW    (MODULE_PER_ROW * MODULE_PIXEL_ROW) // 屏幕的像素行数
+#define SCREEN_PIXEL_COL    (MODULE_PER_COL * MODULE_PIXEL_COL) // 屏幕的像素列数
 
 #define DISRAM_SIZE         (SCREEN_PIXEL_ROW * SCREEN_PIXEL_COL)                                       // 显存大小
-#define CHANNEL_NUM         (MODULE_PER_ROW * MOUDLE_CHANNEL_NUM)                                       // 总通道数
-#define CHANNEL_PIXEL_NUM   (MODULE_PIXEL_ROW * MODULE_PIXEL_COL * MODULE_PER_COL / MOUDLE_CHANNEL_NUM) // 单个通道的像素个数
+#define CHANNEL_NUM         (MODULE_PER_COL * MOUDLE_CHANNEL_NUM)                                       // 总通道数
+#define CHANNEL_PIXEL_NUM   (MODULE_PIXEL_ROW * MODULE_PIXEL_COL * MODULE_PER_ROW / MOUDLE_CHANNEL_NUM) // 单个通道的像素个数
 #define SCAN_LINE_PIXEL_NUM (CHANNEL_PIXEL_NUM / MOUDLE_SCAN_LINE_NUM)                                  // 每个扫描行所包含的像素个数
 #define HUB75_PIXEL_NUM     (MODULE_PIXEL_ROW * MODULE_PIXEL_COL * MODULE_PER_COL)
 #define GROUP_SIZE          (SCAN_LINE_PIXEL_NUM)
