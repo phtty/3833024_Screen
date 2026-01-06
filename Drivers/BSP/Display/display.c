@@ -6,43 +6,43 @@ __attribute__((section(".ccmram"))) uint8_t hub75_buff[DISRAM_SIZE] = {0};
 
 static void scan_channel(uint8_t line_cnt);
 
-const ChannelStruct_TypeDef channel_red[10] = {
-    {R2_GPIO_Port, R2_Pin},
+const ChannelStruct_TypeDef channel_red[] = {
     {R1_GPIO_Port, R1_Pin},
-    {R4_GPIO_Port, R4_Pin},
+    {R2_GPIO_Port, R2_Pin},
     {R3_GPIO_Port, R3_Pin},
-    {R6_GPIO_Port, R6_Pin},
+    {R4_GPIO_Port, R4_Pin},
     {R5_GPIO_Port, R5_Pin},
-    {R8_GPIO_Port, R8_Pin},
+    {R6_GPIO_Port, R6_Pin},
     {R7_GPIO_Port, R7_Pin},
-    {R10_GPIO_Port, R10_Pin},
+    {R8_GPIO_Port, R8_Pin},
     {R9_GPIO_Port, R9_Pin},
+    {R10_GPIO_Port, R10_Pin},
 };
 
-const ChannelStruct_TypeDef channel_green[10] = {
-    {G2_GPIO_Port, G2_Pin},
+const ChannelStruct_TypeDef channel_green[] = {
     {G1_GPIO_Port, G1_Pin},
-    {G4_GPIO_Port, G4_Pin},
+    {G2_GPIO_Port, G2_Pin},
     {G3_GPIO_Port, G3_Pin},
-    {G6_GPIO_Port, G6_Pin},
+    {G4_GPIO_Port, G4_Pin},
     {G5_GPIO_Port, G5_Pin},
-    {G8_GPIO_Port, G8_Pin},
+    {G6_GPIO_Port, G6_Pin},
     {G7_GPIO_Port, G7_Pin},
-    {G10_GPIO_Port, G10_Pin},
+    {G8_GPIO_Port, G8_Pin},
     {G9_GPIO_Port, G9_Pin},
+    {G10_GPIO_Port, G10_Pin},
 };
 
-const ChannelStruct_TypeDef channel_blue[10] = {
-    {B2_GPIO_Port, B2_Pin},
+const ChannelStruct_TypeDef channel_blue[] = {
     {B1_GPIO_Port, B1_Pin},
-    {B4_GPIO_Port, B4_Pin},
+    {B2_GPIO_Port, B2_Pin},
     {B3_GPIO_Port, B3_Pin},
-    {B6_GPIO_Port, B6_Pin},
+    {B4_GPIO_Port, B4_Pin},
     {B5_GPIO_Port, B5_Pin},
-    {B8_GPIO_Port, B8_Pin},
+    {B6_GPIO_Port, B6_Pin},
     {B7_GPIO_Port, B7_Pin},
-    {B10_GPIO_Port, B10_Pin},
+    {B8_GPIO_Port, B8_Pin},
     {B9_GPIO_Port, B9_Pin},
+    {B10_GPIO_Port, B10_Pin},
 };
 
 __STATIC_INLINE void handle_black(int16_t channel_cnt)
@@ -135,24 +135,47 @@ void convert_pixelmap(void)
  *
  * @param line_cnt 行计算
  */
+// static void scan_channel(uint8_t line_cnt)
+// {
+//     if (line_cnt & 0x01U)
+//         HUB75_A = 1;
+//     else
+//         HUB75_A = 0;
+
+//     if (line_cnt & 0x02U)
+//         HUB75_B = 1;
+//     else
+//         HUB75_B = 0;
+
+//     if (line_cnt & 0x04U)
+//         HUB75_C = 1;
+//     else
+//         HUB75_C = 0;
+
+//     if (line_cnt & 0x08U)
+//         HUB75_D = 1;
+//     else
+//         HUB75_D = 0;
+// }
+
 static void scan_channel(uint8_t line_cnt)
 {
-    if (line_cnt & 0x01U)
+    if (line_cnt == 0x01U)
         HUB75_A = 1;
     else
         HUB75_A = 0;
 
-    if (line_cnt & 0x02U)
+    if (line_cnt == 0x02U)
         HUB75_B = 1;
     else
         HUB75_B = 0;
 
-    if (line_cnt & 0x04U)
+    if (line_cnt == 0x04U)
         HUB75_C = 1;
     else
         HUB75_C = 0;
 
-    if (line_cnt & 0x08U)
+    if (line_cnt == 0x08U)
         HUB75_D = 1;
     else
         HUB75_D = 0;
@@ -195,7 +218,7 @@ void send_hub75_buff(void)
     NVIC_EnableIRQ(TIM4_IRQn);
 
     // 行扫描计数自增
-    scan_line++;
+    scan_line += 1;
     if (scan_line >= MOUDLE_SCAN_LINE_NUM)
         scan_line = 0;
 }
