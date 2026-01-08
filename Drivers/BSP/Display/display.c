@@ -113,8 +113,6 @@ ColorHandler color_handlers[] = {
     handle_white,  // case white
 };
 
-#ifdef SCAN_MODE
-
 void convert_pixelmap(void)
 {
     uint16_t row_cnt = 0, col_cnt = 0, group_cnt = 0;
@@ -195,87 +193,6 @@ void send_hub75_buff(void)
     if (scan_line >= 8)
         scan_line = 0;
 }
-
-#endif // SCAN_MODE
-
-#ifdef STATIC_MODE
-/**
- * @brief 更新点阵缓冲区到显存
- *
- */
-void convert_pixelmap(void)
-{
-    uint16_t ModuleGroup = 0;
-    uint8_t row_cnt = 0, col_cnt = 0;
-
-    for (uint16_t map_cnt = 0; map_cnt < DISRAM_SIZE; map_cnt++) {
-        row_cnt = map_cnt / SCREEN_PIXEL_ROW; // 屏幕的行??
-        col_cnt = map_cnt % SCREEN_PIXEL_ROW;
-
-        if (row_cnt % 8 / 4) // 计算组标
-            ModuleGroup = col_cnt / 4 + (row_cnt / 8 * 8 / 4 * (MODULE_PER_ROW * 4)) + col_cnt / 16 * 8;
-        else
-            ModuleGroup = col_cnt / 4 + (row_cnt / 8 * 8 / 4 * (MODULE_PER_ROW * 4)) + col_cnt / 16 * 8 + 4;
-
-        switch (row_cnt % 4) {
-            case 0:
-                hub75_buff[col_cnt % 4 + 4 + ModuleGroup * GROUP_SIZE] = pixel_map[map_cnt];
-                break;
-
-            case 1:
-                hub75_buff[col_cnt % 4 + 0 + ModuleGroup * GROUP_SIZE] = pixel_map[map_cnt];
-                break;
-
-            case 2:
-                hub75_buff[col_cnt % 4 + 12 + ModuleGroup * GROUP_SIZE] = pixel_map[map_cnt];
-                break;
-
-            case 3:
-                hub75_buff[col_cnt % 4 + 8 + ModuleGroup * GROUP_SIZE] = pixel_map[map_cnt];
-                break;
-
-            default:
-                break;
-        }
-    }
-}
-
-#define CHANNEL_OFFSET (channel_cnt * CHANNEL_PIXEL_NUM)
-/**
- * @brief 发送显存数据到HUB75接口
- *
- */
-void send_hub75_buff(void)
-{
-    for (int16_t line_cnt = 0; line_cnt < SCAN_LINE_PIXEL_NUM; line_cnt++) {
-        for (int16_t channel_cnt = 0; channel_cnt < CHANNEL_NUM; channel_cnt++) {
-            DispColor_t color_index = (DispColor_t)hub75_buff[line_cnt + CHANNEL_OFFSET];
-
-            color_handlers[color_index](channel_cnt);
-        }
-
-        HUB75_CLK = 1;
-        __NOP();
-        __NOP();
-        HUB75_CLK = 0;
-    }
-
-    NVIC_DisableIRQ(TIM4_IRQn);
-    HUB75_OE = 1;
-
-    // LE信号给一个周期，使数据从移位寄存器进入输出锁存器
-    HUB75_LAT = 1;
-    __NOP();
-    __NOP();
-    HUB75_LAT = 0;
-    NVIC_EnableIRQ(TIM4_IRQn);
-
-    // LED输出信号使能
-    __NOP();
-    __NOP();
-    HUB75_OE = 0;
-}
-#endif // STATIC_MODE
 
 /**
  * @brief 模组点顺序测试，用于单个模组的像素点规律寻找

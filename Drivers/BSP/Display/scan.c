@@ -82,6 +82,27 @@ void convert_pixelmap_p6(void)
 }
 
 /**
+ * @brief 强力的P6模组的扫描
+ *
+ */
+void convert_pixelmap_p6old(void)
+{
+    uint16_t row_cnt = 0, col_cnt = 0, group_cnt = 0;
+
+    for (uint16_t src_cnt = 0; src_cnt < DISRAM_SIZE; src_cnt++) {
+        row_cnt = src_cnt / SCREEN_PIXEL_ROW; // 屏幕的行标
+        col_cnt = src_cnt % SCREEN_PIXEL_ROW;
+
+        group_cnt = (row_cnt / 16 * 8 + row_cnt % 8) * MODULE_PER_ROW + col_cnt / 32;
+
+        if (row_cnt % 16 / 8) // 下半行
+            hub75_buff[group_cnt * GROUP_SIZE + col_cnt % 32] = pixel_map[src_cnt];
+        else // 上半行
+            hub75_buff[group_cnt * GROUP_SIZE + col_cnt % 32 + 32] = pixel_map[src_cnt];
+    }
+}
+
+/**
  * @brief P10模组的扫描
  *
  */
