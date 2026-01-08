@@ -205,3 +205,24 @@ void convert_pixelmap(void)
             hub75_buff[col_cnt % 8 + ModuleGroup * GROUP_SIZE] = pixel_map[map_cnt];
     }
 }
+
+/**
+ * @brief P20_2R1G模组扫描
+ *
+ */
+void convert_pixelmap(void)
+{
+    uint16_t ModuelGroup = 0;
+    uint8_t row_cnt = 0, col_cnt = 0;
+    static uint8_t group_offset[] = {5, 4, 1, 0};
+
+    for (uint16_t map_cnt = 0; map_cnt < DISRAM_SIZE; map_cnt++) {
+        row_cnt = map_cnt / SCREEN_PIXEL_ROW; // 屏幕的行标
+        col_cnt = map_cnt % SCREEN_PIXEL_ROW;
+
+        // 计算组标
+        ModuelGroup = group_offset[row_cnt % 4] + row_cnt / 4 * CHANNEL_PIXEL_NUM / 8 + col_cnt / 16 * 8 + col_cnt / 8 % 2 * 2;
+
+        hub75_buff[col_cnt % 8 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
+    }
+}

@@ -188,6 +188,7 @@ void RefreshTask(void *argument)
 void PointTestTask(void *argument)
 {
     // HAL_TIM_Base_Stop_IT(&htim3);
+    point_order_test(black, CHANNEL_PIXEL_NUM / 2, 0);
 
     for (;;) {
         for (int i = 0; i < DISRAM_SIZE; i++) {

@@ -4,8 +4,6 @@
 __attribute__((section(".ccmram"))) uint8_t pixel_map[DISRAM_SIZE]  = {0};
 __attribute__((section(".ccmram"))) uint8_t hub75_buff[DISRAM_SIZE] = {0};
 
-static void scan_channel(uint8_t line_cnt);
-
 const ChannelStruct_TypeDef channel_red[] = {
     {R1_GPIO_Port, R1_Pin},
     {R2_GPIO_Port, R2_Pin},
@@ -117,9 +115,9 @@ void convert_pixelmap(void)
 {
     uint16_t row_cnt = 0, col_cnt = 0, group_cnt = 0;
 
-    for (uint16_t src_cnt = 0; src_cnt < DISRAM_SIZE; src_cnt++) {
-        row_cnt = src_cnt / SCREEN_PIXEL_ROW; // 屏幕的行标
-        col_cnt = src_cnt % SCREEN_PIXEL_ROW;
+    for (uint16_t map_cnt = 0; map_cnt < DISRAM_SIZE; map_cnt++) {
+        row_cnt = map_cnt / SCREEN_PIXEL_ROW; // 屏幕的行标
+        col_cnt = map_cnt % SCREEN_PIXEL_ROW;
 
         group_cnt = (row_cnt / 16 * 8 + row_cnt % 8) * MODULE_PER_ROW + col_cnt / 32;
 
@@ -130,7 +128,6 @@ void convert_pixelmap(void)
     }
 }
 
-#define LINE_OFFSET    (scan_line * SCAN_LINE_PIXEL_NUM) // 像素点在扫描行的偏移
 #define CHANNEL_OFFSET (channel_cnt * CHANNEL_PIXEL_NUM) // 像素点在通道的偏移
 /**
  * @brief 动态扫描行切换
@@ -157,12 +154,10 @@ static void scan_channel(uint8_t line_cnt)
  */
 void send_hub75_buff(void)
 {
-    static uint8_t scan_line = 0;
-
     for (int16_t line_cnt = 0; line_cnt < SCAN_LINE_PIXEL_NUM; line_cnt++) {
         for (int16_t channel_cnt = 0; channel_cnt < CHANNEL_NUM; channel_cnt++) {
             // 取出第channel_cnt通道中，第scan_line行的第line_cnt个像素点的颜色数据
-            DispColor_t color_index = (DispColor_t)hub75_buff[line_cnt + LINE_OFFSET + CHANNEL_OFFSET];
+            DispColor_t color_index = (DispColor_t)hub75_buff[line_cnt + CHANNEL_OFFSET];
             // 通过跳转表执行对应颜色通道引脚的电平变化
             color_handlers[color_index](channel_cnt);
         }
@@ -178,7 +173,6 @@ void send_hub75_buff(void)
     // 在多行扫描中为原子操作，需将OE保持除能
     NVIC_DisableIRQ(TIM4_IRQn);
     HUB75_OE = 1;
-    scan_channel(scan_line); // 扫描行切换
 
     // LE信号给一个周期，除能闩锁器一个脉冲的时间，使数据从移位寄存器进入输出锁存器
     HUB75_LAT = 1;
