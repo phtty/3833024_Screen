@@ -3,9 +3,6 @@
 
 #include "main.h"
 
-#define STATIC_MODE // 使用静态扫描
-// #define SCAN_MODE // 使用动态扫描模式
-
 /*
 标准75接口点阵屏管脚定义,缺口在左
 R1      G1

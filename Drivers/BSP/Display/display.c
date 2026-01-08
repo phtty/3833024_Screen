@@ -111,121 +111,6 @@ ColorHandler color_handlers[] = {
     handle_white,  // case white
 };
 
-#ifdef SCAN_MODE
-
-static void scan_channel(uint8_t line_cnt);
-
-void convert_pixelmap(void)
-{
-    uint16_t row_cnt = 0, col_cnt = 0, buff_cnt = 0;
-
-    for (uint16_t src_cnt = 0; src_cnt < DISRAM_SIZE; src_cnt++) {
-        row_cnt = src_cnt / SCREEN_PIXEL_ROW; // 屏幕的行标
-        col_cnt = src_cnt % SCREEN_PIXEL_ROW;
-
-        buff_cnt             = ((col_cnt / 16 + 1) * 8 - 1 - col_cnt % 8) * SCAN_LINE_PIXEL_NUM + row_cnt * 2 + col_cnt / 8 % 2;
-        hub75_buff[buff_cnt] = pixel_map[src_cnt];
-    }
-}
-
-#define LINE_OFFSET    (scan_line * SCAN_LINE_PIXEL_NUM) // 像素点在扫描行的偏移
-#define CHANNEL_OFFSET (channel_cnt * CHANNEL_PIXEL_NUM) // 像素点在通道的偏移
-/**
- * @brief 动态扫描行切换
- *
- * @param line_cnt 行计算
- */
-// static void scan_channel(uint8_t line_cnt)
-// {
-//     if (line_cnt & 0x01U)
-//         HUB75_A = 1;
-//     else
-//         HUB75_A = 0;
-
-//     if (line_cnt & 0x02U)
-//         HUB75_B = 1;
-//     else
-//         HUB75_B = 0;
-
-//     if (line_cnt & 0x04U)
-//         HUB75_C = 1;
-//     else
-//         HUB75_C = 0;
-
-//     if (line_cnt & 0x08U)
-//         HUB75_D = 1;
-//     else
-//         HUB75_D = 0;
-// }
-
-static void scan_channel(uint8_t line_cnt)
-{
-    if (line_cnt == 0x01U)
-        HUB75_A = 1;
-    else
-        HUB75_A = 0;
-
-    if (line_cnt == 0x02U)
-        HUB75_B = 1;
-    else
-        HUB75_B = 0;
-
-    if (line_cnt == 0x04U)
-        HUB75_C = 1;
-    else
-        HUB75_C = 0;
-
-    if (line_cnt == 0x08U)
-        HUB75_D = 1;
-    else
-        HUB75_D = 0;
-}
-
-/**
- * @brief 发送显存数据到HUB75接口
- *
- */
-void send_hub75_buff(void)
-{
-    static uint8_t scan_line = 0;
-
-    for (int16_t line_cnt = 0; line_cnt < SCAN_LINE_PIXEL_NUM; line_cnt++) {
-        for (int16_t channel_cnt = 0; channel_cnt < CHANNEL_NUM; channel_cnt++) {
-            // 取出第channel_cnt通道中，第scan_line行的第line_cnt个像素点的颜色数据
-            DispColor_t color_index = (DispColor_t)hub75_buff[line_cnt + LINE_OFFSET + CHANNEL_OFFSET];
-            // 通过跳转表执行对应颜色通道引脚的电平变化
-            color_handlers[color_index](channel_cnt);
-        }
-
-        // CLK给1个脉冲，LED驱动芯片移位寄存器移位
-        HUB75_CLK = 1;
-        __NOP();
-        __NOP();
-        HUB75_CLK = 0;
-    }
-
-    // 所有通道的第scan_line扫描行数据发送完毕，控制LED驱动芯片将数据放入输出锁存器
-    // 在多行扫描中为原子操作，需将OE保持除能
-    NVIC_DisableIRQ(TIM4_IRQn);
-    HUB75_OE = 1;
-    scan_channel(scan_line); // 扫描行切换
-
-    // LE信号给一个周期，除能闩锁器一个脉冲的时间，使数据从移位寄存器进入输出锁存器
-    HUB75_LAT = 1;
-    __NOP();
-    __NOP();
-    HUB75_LAT = 0;
-    NVIC_EnableIRQ(TIM4_IRQn);
-
-    // 行扫描计数自增
-    scan_line += 1;
-    if (scan_line >= MOUDLE_SCAN_LINE_NUM)
-        scan_line = 0;
-}
-
-#endif // SCAN_MODE
-
-#ifdef STATIC_MODE
 /**
  * @brief 更新点阵缓冲区到显存
  *
@@ -281,7 +166,6 @@ void send_hub75_buff(void)
     HUB75_LAT = 0;
     NVIC_EnableIRQ(TIM4_IRQn);
 }
-#endif // STATIC_MODE
 
 /**
  * @brief 模组点顺序测试，用于单个模组的像素点规律寻找
