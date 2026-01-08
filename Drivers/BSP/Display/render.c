@@ -126,12 +126,10 @@ void RenderChar(const uint8_t *p_text, uint16_t *x, uint16_t *y, FontSize_t font
 
     for (uint8_t i = 0; i < CHAR_HEIGHT; i++) {     // 行遍历
         for (uint8_t j = 0; j < CHAR_WEIGHT; j++) { // 列遍历
-            if (j < CHAR_HEIGHT / (2 - mode)) {
-                if (((font_buf[i * ((CHAR_WEIGHT + 7) / 8) + j / 8] << j % 8) & 0x80) == 0)
-                    pixel_map[SCREEN_PIXEL_ROW * (i + *y) + *x + j] = black;
-                else
-                    pixel_map[SCREEN_PIXEL_ROW * (i + *y) + *x + j] = color;
-            }
+            if (((font_buf[i * ((CHAR_WEIGHT + 7) / 8) + j / 8] << j % 8) & 0x80) == 0)
+                pixel_map[SCREEN_PIXEL_ROW * (i + *y) + *x + j] = black;
+            else
+                pixel_map[SCREEN_PIXEL_ROW * (i + *y) + *x + j] = color;
         }
     }
 

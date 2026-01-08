@@ -117,14 +117,18 @@ ColorHandler color_handlers[] = {
 
 void convert_pixelmap(void)
 {
-    uint16_t row_cnt = 0, col_cnt = 0, buff_cnt = 0;
+    uint16_t row_cnt = 0, col_cnt = 0, group_cnt = 0;
 
     for (uint16_t src_cnt = 0; src_cnt < DISRAM_SIZE; src_cnt++) {
         row_cnt = src_cnt / SCREEN_PIXEL_ROW; // 屏幕的行标
         col_cnt = src_cnt % SCREEN_PIXEL_ROW;
 
-        buff_cnt             = ((col_cnt / 16 + 1) * 8 - 1 - col_cnt % 8) * SCAN_LINE_PIXEL_NUM + row_cnt * 2 + col_cnt / 8 % 2;
-        hub75_buff[buff_cnt] = pixel_map[src_cnt];
+        group_cnt = (row_cnt / 16 * 8 + row_cnt % 8) * MODULE_PER_ROW + col_cnt / 32;
+
+        if (row_cnt % 16 / 8) // 下半行
+            hub75_buff[group_cnt * GROUP_SIZE + col_cnt % 32] = pixel_map[src_cnt];
+        else // 上半行
+            hub75_buff[group_cnt * GROUP_SIZE + col_cnt % 32 + 32] = pixel_map[src_cnt];
     }
 }
 
@@ -135,50 +139,18 @@ void convert_pixelmap(void)
  *
  * @param line_cnt 行计算
  */
-// static void scan_channel(uint8_t line_cnt)
-// {
-//     if (line_cnt & 0x01U)
-//         HUB75_A = 1;
-//     else
-//         HUB75_A = 0;
-
-//     if (line_cnt & 0x02U)
-//         HUB75_B = 1;
-//     else
-//         HUB75_B = 0;
-
-//     if (line_cnt & 0x04U)
-//         HUB75_C = 1;
-//     else
-//         HUB75_C = 0;
-
-//     if (line_cnt & 0x08U)
-//         HUB75_D = 1;
-//     else
-//         HUB75_D = 0;
-// }
-
 static void scan_channel(uint8_t line_cnt)
 {
-    if (line_cnt == 0x01U)
-        HUB75_A = 1;
-    else
-        HUB75_A = 0;
-
-    if (line_cnt == 0x02U)
+    if (0 == line_cnt)
         HUB75_B = 1;
-    else
+    HUB75_A = 1;
+
+    for (uint8_t i = 0; i < 2; i++)
+        __NOP();
+
+    HUB75_A = 0;
+    if (0 == line_cnt)
         HUB75_B = 0;
-
-    if (line_cnt == 0x04U)
-        HUB75_C = 1;
-    else
-        HUB75_C = 0;
-
-    if (line_cnt == 0x08U)
-        HUB75_D = 1;
-    else
-        HUB75_D = 0;
 }
 
 /**
@@ -212,14 +184,15 @@ void send_hub75_buff(void)
 
     // LE信号给一个周期，除能闩锁器一个脉冲的时间，使数据从移位寄存器进入输出锁存器
     HUB75_LAT = 1;
-    __NOP();
-    __NOP();
+    for (uint8_t i = 0; i < 2; i++)
+        __NOP();
     HUB75_LAT = 0;
+
     NVIC_EnableIRQ(TIM4_IRQn);
 
     // 行扫描计数自增
     scan_line += 1;
-    if (scan_line >= MOUDLE_SCAN_LINE_NUM)
+    if (scan_line >= 8)
         scan_line = 0;
 }
 
@@ -232,7 +205,7 @@ void send_hub75_buff(void)
  */
 void convert_pixelmap(void)
 {
-    uint16_t ModuelGroup = 0;
+    uint16_t ModuleGroup = 0;
     uint8_t row_cnt = 0, col_cnt = 0;
 
     for (uint16_t map_cnt = 0; map_cnt < DISRAM_SIZE; map_cnt++) {
@@ -240,25 +213,25 @@ void convert_pixelmap(void)
         col_cnt = map_cnt % SCREEN_PIXEL_ROW;
 
         if (row_cnt % 8 / 4) // 计算组标
-            ModuelGroup = col_cnt / 4 + (row_cnt / 8 * 8 / 4 * (MODULE_PER_ROW * 4)) + col_cnt / 16 * 8;
+            ModuleGroup = col_cnt / 4 + (row_cnt / 8 * 8 / 4 * (MODULE_PER_ROW * 4)) + col_cnt / 16 * 8;
         else
-            ModuelGroup = col_cnt / 4 + (row_cnt / 8 * 8 / 4 * (MODULE_PER_ROW * 4)) + col_cnt / 16 * 8 + 4;
+            ModuleGroup = col_cnt / 4 + (row_cnt / 8 * 8 / 4 * (MODULE_PER_ROW * 4)) + col_cnt / 16 * 8 + 4;
 
         switch (row_cnt % 4) {
             case 0:
-                hub75_buff[col_cnt % 4 + 4 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
+                hub75_buff[col_cnt % 4 + 4 + ModuleGroup * GROUP_SIZE] = pixel_map[map_cnt];
                 break;
 
             case 1:
-                hub75_buff[col_cnt % 4 + 0 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
+                hub75_buff[col_cnt % 4 + 0 + ModuleGroup * GROUP_SIZE] = pixel_map[map_cnt];
                 break;
 
             case 2:
-                hub75_buff[col_cnt % 4 + 12 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
+                hub75_buff[col_cnt % 4 + 12 + ModuleGroup * GROUP_SIZE] = pixel_map[map_cnt];
                 break;
 
             case 3:
-                hub75_buff[col_cnt % 4 + 8 + ModuelGroup * GROUP_SIZE] = pixel_map[map_cnt];
+                hub75_buff[col_cnt % 4 + 8 + ModuleGroup * GROUP_SIZE] = pixel_map[map_cnt];
                 break;
 
             default:

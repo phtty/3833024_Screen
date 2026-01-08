@@ -190,20 +190,17 @@ void PointTestTask(void *argument)
     // HAL_TIM_Base_Stop_IT(&htim3);
 
     for (;;) {
-        for (int i = 0; i < DISRAM_SIZE / 2; i++) {
-            // pixel_map[i] = green;
-            hub75_buff[i] = green;
+        for (int i = 0; i < DISRAM_SIZE; i++) {
+            pixel_map[i] = green;
 
-            // convert_pixelmap();
-            osDelay(500);
+            convert_pixelmap();
+            osDelay(50);
 
-            // pixel_map[i] = black;
-            hub75_buff[i] = black;
+            pixel_map[i] = black;
         }
 
         // point_order_test(green, 1, 0);
-
-        osDelay(500);
+        // osDelay(500);
     }
 }
 /* USER CODE END Application */
