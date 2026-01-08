@@ -1,5 +1,5 @@
-#ifndef BSP_HUB75_HUB75_H
-#define BSP_HUB75_HUB75_H
+#ifndef DRIVERS_BSP_HUB75_HUB75_H
+#define DRIVERS_BSP_HUB75_HUB75_H
 
 #include "main.h"
 
@@ -69,4 +69,4 @@ OE      GND
 
 void init_hub75(void);
 
-#endif // !BSP_HUB75_HUB75_H
+#endif // !DRIVERS_BSP_HUB75_HUB75_H

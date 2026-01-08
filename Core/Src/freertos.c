@@ -148,13 +148,13 @@ void InitailizeTask(void *argument)
     HAL_TIM_Base_Start_IT(&htim3);
     HAL_TIM_Base_Start_IT(&htim4);
 
-    HalfSecTaskHandle = osThreadNew(HalfSecTask, NULL, &HalfSecTask_attributes);
-    // PointTestTaskHandle = osThreadNew(PointTestTask, NULL, &PointTestTask_attributes);
-    RefreshTaskHandle = osThreadNew(RefreshTask, NULL, &RefreshTask_attributes);
+    HalfSecTaskHandle   = osThreadNew(HalfSecTask, NULL, &HalfSecTask_attributes);
+    PointTestTaskHandle = osThreadNew(PointTestTask, NULL, &PointTestTask_attributes);
+    // RefreshTaskHandle = osThreadNew(RefreshTask, NULL, &RefreshTask_attributes);
 
     BSP_W25Qx_Init(&hw25q64, &hspi1);
 
-    RenderString(0, 0, (uint8_t *)"ab²âc»»ÐÐ", strlen("ab²âc»»ÐÐ"), green, font_24, font_ht);
+    // RenderString(0, 0, (uint8_t *)"ab²âc»»ÐÐ", strlen("ab²âc»»ÐÐ"), green, font_24, font_ht);
 
     osThreadExit();
     /* Infinite loop */
@@ -190,17 +190,17 @@ void PointTestTask(void *argument)
     // HAL_TIM_Base_Stop_IT(&htim3);
 
     for (;;) {
-        // for (int i = 0; i < DISRAM_SIZE; i++) {
-        //     pixel_map[i] = green;
+        for (int i = 0; i < DISRAM_SIZE; i++) {
+            pixel_map[i] = green;
 
-        //     convert_pixelmap();
-        //     osDelay(50);
+            convert_pixelmap();
+            osDelay(50);
 
-        //     pixel_map[i] = black;
-        // }
+            pixel_map[i] = black;
+        }
 
         // point_order_test(green, 1, 0);
-        osDelay(500);
+        // osDelay(500);
     }
 }
 /* USER CODE END Application */

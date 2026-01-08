@@ -1,5 +1,5 @@
-#ifndef DRIVERS_BSP_COMPONENTS_W25QXX_W25QXX_H
-#define DRIVERS_BSP_COMPONENTS_W25QXX_W25QXX_H
+#ifndef DRIVERS_BSP_W25QXX_W25QXX_H
+#define DRIVERS_BSP_W25QXX_W25QXX_H
 
 #include "main.h"
 
@@ -95,4 +95,4 @@ void BSP_W25Qx_EraseWrite(W25QXX_HandleTypeDef *w25qxx, uint8_t *pBuffer, uint32
 uint8_t BSP_W25Qx_Erase_Sector(W25QXX_HandleTypeDef *w25qxx, uint32_t Address);
 uint8_t BSP_W25Qx_Erase_Chip(W25QXX_HandleTypeDef *w25qxx);
 
-#endif // DRIVERS_BSP_COMPONENTS_W25QXX_W25QXX_H
+#endif // DRIVERS_BSP_W25QXX_W25QXX_H
