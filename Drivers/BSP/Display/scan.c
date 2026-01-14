@@ -210,7 +210,7 @@ void convert_pixelmap(void)
  * @brief P20_2R1GÄ£×éÉ¨Ãè
  *
  */
-void convert_pixelmap(void)
+void convert_pixelmap_p20(void)
 {
     uint16_t ModuelGroup = 0;
     uint8_t row_cnt = 0, col_cnt = 0;

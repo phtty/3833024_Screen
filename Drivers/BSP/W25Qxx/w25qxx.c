@@ -192,12 +192,16 @@ uint8_t BSP_W25Qx_ReadDMA(W25QXX_HandleTypeDef *w25qxx, uint8_t *pData, uint32_t
 }
 
 /**
- * @brief   页写入
- * @param   *pBuffer          写缓存指令
- * @param   WriteAddr         flash的地址
- * @param   NumByteToWrite    字节大小（最大256B）
- * @note    NumByteToWrite不应超过该页的剩余字节数
- * @retval  NONE
+ * @brief 页编程
+ *
+ * @param w25qxx w25qxx句柄
+ * @param pBuffer 写入内容
+ * @param WriteAddr flash的地址
+ * @param NumByteToWrite 字节大小（最大256B）
+ *
+ * @note NumByteToWrite不应超过该页的剩余字节数
+ *
+ * @retval none
  */
 void BSP_W25Qx_WritePage(W25QXX_HandleTypeDef *w25qxx, uint8_t *pBuffer, uint32_t WriteAddr, uint16_t NumByteToWrite)
 {
@@ -311,9 +315,9 @@ void BSP_W25Qx_EraseWrite(W25QXX_HandleTypeDef *w25qxx, uint8_t *pBuffer, uint32
                 break; // 需要擦除
         }
 
-        if (i < secremain) {                        // 需要擦除
-            BSP_W25Qx_Erase_Sector(w25qxx, secpos); // 擦除这个扇区
-            for (i = 0; i < secremain; i++) {       // 复制
+        if (i < secremain) {                       // 需要擦除
+            BSP_W25Qx_EraseSector(w25qxx, secpos); // 擦除这个扇区
+            for (i = 0; i < secremain; i++) {      // 复制
                 w25qxx_buff[i + secoff] = pBuffer[i];
             }
             BSP_W25Qx_WriteNoCheck(w25qxx, w25qxx_buff, secpos * W25Qx_SECTOR_SIZE, W25Qx_SECTOR_SIZE); // 写入整个扇区
@@ -340,30 +344,29 @@ void BSP_W25Qx_EraseWrite(W25QXX_HandleTypeDef *w25qxx, uint8_t *pBuffer, uint32
 }
 
 /**
- * @brief   扇区擦除
- * @param   Address     擦除扇区的地址
- * @retval  W25Qxx状态
+ * @brief 扇区擦除
+ *
+ * @param w25qxx w25qxx句柄
+ * @param SectorNum 扇区编号
+ * @return uint8_t 操作结果
  */
-uint8_t BSP_W25Qx_Erase_Sector(W25QXX_HandleTypeDef *w25qxx, uint32_t Address)
+uint8_t BSP_W25Qx_EraseSector(W25QXX_HandleTypeDef *w25qxx, uint32_t SectorNum)
 {
     uint8_t cmd[5];
     uint8_t cmd_len    = 0;
     uint32_t tickstart = HAL_GetTick();
 
-    BSP_W25Qx_WriteEnable(w25qxx); // 发送 0x06
+    BSP_W25Qx_WriteEnable(w25qxx);
 
     // 组装指令和地址
     cmd[cmd_len++] = SECTOR_ERASE_CMD;
 
     if (w25qxx->device_id >= 0xef19) {
-        cmd[cmd_len++] = (uint8_t)(Address >> 24);
+        cmd[cmd_len++] = (uint8_t)((SectorNum * W25Qx_SECTOR_SIZE) >> 24);
     }
-    cmd[cmd_len++] = (uint8_t)((Address) >> 16);
-    cmd[cmd_len++] = (uint8_t)((Address) >> 8);
-    cmd[cmd_len++] = (uint8_t)(Address);
-
-    /* Enable write operations */
-    BSP_W25Qx_WriteEnable(w25qxx);
+    cmd[cmd_len++] = (uint8_t)((SectorNum * W25Qx_SECTOR_SIZE) >> 16);
+    cmd[cmd_len++] = (uint8_t)((SectorNum * W25Qx_SECTOR_SIZE) >> 8);
+    cmd[cmd_len++] = (uint8_t)((SectorNum * W25Qx_SECTOR_SIZE));
 
     /*Select the FLASH: Chip Select low */
     W25QXX_CS = 0;
@@ -386,7 +389,7 @@ uint8_t BSP_W25Qx_Erase_Sector(W25QXX_HandleTypeDef *w25qxx, uint32_t Address)
  * @brief   全片擦除
  * @retval  W25Qxx
  */
-uint8_t BSP_W25Qx_Erase_Chip(W25QXX_HandleTypeDef *w25qxx)
+uint8_t BSP_W25Qx_EraseChip(W25QXX_HandleTypeDef *w25qxx)
 {
     uint8_t cmd[5];
     uint32_t tickstart = HAL_GetTick();
@@ -410,4 +413,20 @@ uint8_t BSP_W25Qx_Erase_Chip(W25QXX_HandleTypeDef *w25qxx)
         }
     }
     return W25Qx_OK;
+}
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    if (hw25q64.spi_port == hspi) {
+        hw25q64.tx_cplt = true;
+        // W25QXX_CS       = 1;
+    }
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    if (hw25q64.spi_port == hspi) {
+        hw25q64.rx_cplt = true;
+        W25QXX_CS       = 1;
+    }
 }

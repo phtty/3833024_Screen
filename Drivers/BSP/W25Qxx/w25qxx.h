@@ -92,7 +92,7 @@ uint8_t BSP_W25Qx_ReadDMA(W25QXX_HandleTypeDef *w25qxx, uint8_t *pData, uint32_t
 uint8_t BSP_W25Qx_WriteEnable(W25QXX_HandleTypeDef *w25qxx);
 void BSP_W25Qx_WritePage(W25QXX_HandleTypeDef *w25qxx, uint8_t *pBuffer, uint32_t WriteAddr, uint16_t NumByteToWrite);
 void BSP_W25Qx_EraseWrite(W25QXX_HandleTypeDef *w25qxx, uint8_t *pBuffer, uint32_t WriteAddr, uint16_t NumByteToWrite);
-uint8_t BSP_W25Qx_Erase_Sector(W25QXX_HandleTypeDef *w25qxx, uint32_t Address);
-uint8_t BSP_W25Qx_Erase_Chip(W25QXX_HandleTypeDef *w25qxx);
+uint8_t BSP_W25Qx_EraseSector(W25QXX_HandleTypeDef *w25qxx, uint32_t SectorNum);
+uint8_t BSP_W25Qx_EraseChip(W25QXX_HandleTypeDef *w25qxx);
 
 #endif // DRIVERS_BSP_W25QXX_W25QXX_H

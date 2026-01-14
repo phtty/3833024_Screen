@@ -366,20 +366,5 @@ void USART6_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-    if (hw25q64.spi_port == hspi) {
-        hw25q64.tx_cplt = true;
-        W25QXX_CS       = 1;
-    }
-}
-
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-    if (hw25q64.spi_port == hspi) {
-        hw25q64.rx_cplt = true;
-        W25QXX_CS       = 1;
-    }
-}
 
 /* USER CODE END 1 */

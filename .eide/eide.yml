@@ -248,6 +248,7 @@ targets:
             $float-abi-type: hard
             arm-thumb-interwork: true
             arm-thumb-mode: thumb
+            not-use-syscalls: true
             output-debug-info: enable
           linker:
             $toolName: auto
@@ -261,6 +262,10 @@ targets:
           ROM: []
         useCustomScatterFile: true
     uploadConfigMap:
+      Custom:
+        bin: ""
+        commandLine: openocd -f ./Compiler/ModuleScan.cfg -c "init; halt; program ./build/Debug/ModuleScan.hex verify reset exit"
+        eraseChipCommand: openocd -f ./Compiler/ModuleScan.cfg -c "init; halt; stm32f4x unlock 0; stm32f4x mass_erase 0; reset; shutdown"
       JLink:
         baseAddr: ""
         bin: ""
@@ -275,4 +280,4 @@ targets:
         bin: ""
         interface: cmsis-dap
         target: stm32f4x
-    uploader: OpenOCD
+    uploader: Custom

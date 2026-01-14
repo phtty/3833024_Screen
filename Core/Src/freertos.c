@@ -39,7 +39,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define IPADDR 8 * 1024 * 1024 - 20
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -144,17 +144,24 @@ void InitailizeTask(void *argument)
     /* USER CODE BEGIN InitailizeTask */
     __HAL_DBGMCU_FREEZE_TIM3();
     __HAL_DBGMCU_FREEZE_TIM4();
+
+    light_level = 1;
     init_hub75();
     HAL_TIM_Base_Start_IT(&htim3);
     HAL_TIM_Base_Start_IT(&htim4);
 
-    HalfSecTaskHandle   = osThreadNew(HalfSecTask, NULL, &HalfSecTask_attributes);
-    PointTestTaskHandle = osThreadNew(PointTestTask, NULL, &PointTestTask_attributes);
-    // RefreshTaskHandle = osThreadNew(RefreshTask, NULL, &RefreshTask_attributes);
+    HalfSecTaskHandle = osThreadNew(HalfSecTask, NULL, &HalfSecTask_attributes);
+    // PointTestTaskHandle = osThreadNew(PointTestTask, NULL, &PointTestTask_attributes);
+    RefreshTaskHandle = osThreadNew(RefreshTask, NULL, &RefreshTask_attributes);
 
     BSP_W25Qx_Init(&hw25q64, &hspi1);
 
-    // RenderString(0, 0, (uint8_t *)"ab≤‚cªª––", strlen("ab≤‚cªª––"), green, font_24, font_ht);
+    // BSP_W25Qx_Erase_Sector(&hw25q64, IPADDR);
+    BSP_W25Qx_EraseWrite(&hw25q64, (uint8_t *)"192.168.114.200", IPADDR, 15);
+    uint8_t ch_buff[128] = {0};
+    BSP_W25Qx_ReadDMA(&hw25q64, ch_buff, IPADDR, 15);
+
+    // RenderString(0, 0, (uint8_t *)"≤‚ ‘", strlen("≤‚ ‘"), green, font_32, font_ht);
 
     osThreadExit();
     /* Infinite loop */
@@ -188,7 +195,9 @@ void RefreshTask(void *argument)
 void PointTestTask(void *argument)
 {
     // HAL_TIM_Base_Stop_IT(&htim3);
-    point_order_test(black, CHANNEL_PIXEL_NUM / 2, 0);
+
+    // pixel_map[32] = green;
+    // convert_pixelmap();
 
     for (;;) {
         for (int i = 0; i < DISRAM_SIZE; i++) {
@@ -200,8 +209,8 @@ void PointTestTask(void *argument)
             pixel_map[i] = black;
         }
 
-        // point_order_test(green, 1, 0);
-        // osDelay(500);
+        point_order_test(green, 1, 0);
+        osDelay(500);
     }
 }
 /* USER CODE END Application */

@@ -35,6 +35,68 @@
             "command": "${command:eide.project.clean}",
             "group": "build",
             "problemMatcher": []
+        },
+        {
+            "label": "STM32: 解锁芯片 (解除读保护/RDP Unlock)",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/cmsis-dap.cfg",
+                "-f",
+                "target/stm32f4x.cfg",
+                "-c",
+                "init",
+                "-c",
+                "reset halt",
+                "-c",
+                "stm32f4x unlock 0",
+                "-c",
+                "reset",
+                "-c",
+                "shutdown"
+            ],
+            "problemMatcher": [],
+            "group": "none",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        },
+        {
+            "label": "STM32: 全片擦除 (Mass Erase)",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/cmsis-dap.cfg",
+                "-f",
+                "target/stm32f4x.cfg",
+                "-c",
+                "init",
+                "-c",
+                "reset halt",
+                "-c",
+                "stm32f4x mass_erase 0",
+                "-c",
+                "reset",
+                "-c",
+                "shutdown"
+            ],
+            "problemMatcher": [],
+            "group": "none",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": true
+            }
         }
     ]
 }

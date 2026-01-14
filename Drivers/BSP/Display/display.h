@@ -3,10 +3,10 @@
 
 #include "main.h"
 
-#define MODULE_PER_ROW       1  // 每行的模组数
+#define MODULE_PER_ROW       2  // 每行的模组数
 #define MODULE_PER_COL       1  // 每列的模组数
-#define MODULE_PIXEL_ROW     16 // 模组每行的像素个数
-#define MODULE_PIXEL_COL     8  // 模组每列的像素个数
+#define MODULE_PIXEL_ROW     32 // 模组每行的像素个数
+#define MODULE_PIXEL_COL     32 // 模组每列的像素个数
 #define MOUDLE_CHANNEL_NUM   2  // 单块模组的通道个数
 #define MOUDLE_SCAN_LINE_NUM 8  // 模组的扫描行数
 // #define GROUP_SIZE           16 // 每组的像素个数
@@ -19,7 +19,7 @@
 #define CHANNEL_PIXEL_NUM   (MODULE_PIXEL_ROW * MODULE_PIXEL_COL * MODULE_PER_ROW / MOUDLE_CHANNEL_NUM) // 单个通道的像素个数
 #define SCAN_LINE_PIXEL_NUM (CHANNEL_PIXEL_NUM / MOUDLE_SCAN_LINE_NUM)                                  // 每个扫描行所包含的像素个数
 #define HUB75_PIXEL_NUM     (MODULE_PIXEL_ROW * MODULE_PIXEL_COL * MODULE_PER_COL)
-#define GROUP_SIZE          (SCAN_LINE_PIXEL_NUM)
+#define GROUP_SIZE          (SCAN_LINE_PIXEL_NUM / MODULE_PER_ROW)
 
 // bit0红，bit1绿，bit2蓝
 typedef enum {
